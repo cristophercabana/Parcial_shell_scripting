@@ -108,24 +108,84 @@ programar() {
     fi
 }
 
+
 ver_tareas() {
     local -a tareas
-    local linea i=0
+    local linea id config
+    local script meses dias horas minutos proxima
+    local i=0
 
     mapfile -t tareas < <(crontab -l 2>/dev/null || true)
 
-    echo "===== TODAS LAS TAREAS PROGRAMADAS ====="
+    echo ""
+    echo "===== TAREAS PROGRAMADAS ====="
 
     for linea in "${tareas[@]}"; do
+
+        # Ignora líneas vacías.
         [[ -z "${linea//[[:space:]]/}" ]] && continue
+
+        # Ignora comentarios.
         [[ "$linea" =~ ^[[:space:]]*# ]] && continue
 
         ((i+=1))
-        printf '%d. %s\n' "$i" "$linea"
+
+        echo ""
+        echo "----------------------------------------"
+        echo "Tarea $i"
+
+        # Comprueba si pertenece a nuestro proyecto.
+        if [[ "$linea" == *"# $MARCA:"* ]]; then
+
+            if [[ "$linea" =~ $MARCA:([0-9]+) ]]; then
+                id="${BASH_REMATCH[1]}"
+            else
+                continue
+            fi
+
+            config="$ESTADO/$id.conf"
+
+            echo "Tipo: Tarea del proyecto"
+            echo "ID: $id"
+
+            if [[ ! -f "$config" ]]; then
+                echo "Configuración no encontrada."
+                echo "Cron: $linea"
+                continue
+            fi
+
+            # Lee la configuración guardada.
+            IFS='|' read -r script meses dias horas minutos proxima < "$config"
+
+            echo "Script: $(basename "$script")"
+            echo "Frecuencia: cada $meses mes(es), $dias día(s), $horas hora(s) y $minutos minuto(s)"
+
+            if [[ "$proxima" =~ ^[0-9]+$ ]]; then
+                echo "Próxima ejecución: $(date -d "@$proxima" '+%d/%m/%Y %H:%M:%S')"
+            else
+                echo "Próxima ejecución: Fecha inválida."
+            fi
+
+            echo "Cron: cada minuto (verificador)"
+
+        else
+
+            # Tarea creada directamente en Cron.
+            echo "Tipo: Tarea propia de Cron"
+            echo "Programación y comando:"
+            echo "$linea"
+
+        fi
     done
 
-    (( i == 0 )) && echo "No hay tareas programadas."
+    if (( i == 0 )); then
+        echo "No hay tareas programadas."
+    fi
+
+    echo ""
+    echo "----------------------------------------"
 }
+
 
 
 eliminar_tarea() {
