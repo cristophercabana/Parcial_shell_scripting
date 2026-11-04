@@ -1,7 +1,8 @@
 #!/bin/bash
 
 BASE="$(cd "$(dirname "$0")" && pwd)"
-REPORTE="$BASE/reportes/reporte_sistema.txt"
+FECHA=$(date '+%Y-%m-%d_%H-%M-%S')
+REPORTE="$BASE/reportes/reporte_sistema_$FECHA.txt"
 
 mkdir -p "$BASE/reportes"
 
