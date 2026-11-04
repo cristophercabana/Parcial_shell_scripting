@@ -109,21 +109,56 @@ pegar() {
     fi
 }
 
+
 permisos() {
-    local nombre
+    local nombre modo
+
     listar
-    read -r -p "Archivo para aplicar chmod 644: " nombre || return
-    if [[ -f "$nombre" && ! -L "$nombre" ]]; then
-        if chmod 644 -- "$nombre"; then
-            echo "Permisos actualizados:"
-            ls -l -- "$nombre"
-        else
-            echo "No se pudieron cambiar los permisos."
-        fi
-    else
+
+    read -r -p "Archivo para cambiar permisos: " nombre || return
+
+    if [[ ! -f "$nombre" || -L "$nombre" ]]; then
         echo "Archivo no valido o inexistente."
+        return
+    fi
+
+    echo ""
+    echo "===== GUIA DE PERMISOS chmod ====="
+    echo "0 = Sin permisos"
+    echo "1 = Ejecucion"
+    echo "2 = Escritura"
+    echo "3 = Escritura + ejecucion"
+    echo "4 = Lectura"
+    echo "5 = Lectura + ejecucion"
+    echo "6 = Lectura + escritura"
+    echo "7 = Lectura + escritura + ejecucion"
+    echo ""
+    echo "Orden de los numeros:"
+    echo "Primer numero  : Propietario"
+    echo "Segundo numero : Grupo"
+    echo "Tercer numero  : Otros"
+    echo ""
+    echo "Ejemplo: 644"
+    echo "6 = Propietario: lectura y escritura"
+    echo "4 = Grupo: lectura"
+    echo "4 = Otros: lectura"
+    echo ""
+
+    read -r -p "Introduce los permisos: " modo || return
+
+    if [[ ! "$modo" =~ ^[0-7]{3,4}$ ]]; then
+        echo "Formato de permisos invalido."
+        return
+    fi
+
+    if chmod "$modo" -- "$nombre"; then
+        echo "Permisos actualizados:"
+        ls -l -- "$nombre"
+    else
+        echo "No se pudieron cambiar los permisos."
     fi
 }
+
 
 eliminar() {
     local nombre respuesta
@@ -153,7 +188,7 @@ while true; do
     echo "2. Crear archivo"
     echo "3. Copiar archivo"
     echo "4. Pegar archivo"
-    echo "5. Cambiar permisos a 644"
+    echo "5. Cambiar permisos"
     echo "6. Eliminar archivo"
     echo "7. Salir"
     read -r -p "Selecciona una opcion: " opcion || break
